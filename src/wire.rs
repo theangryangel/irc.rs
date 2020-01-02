@@ -1,32 +1,21 @@
-use std::collections::BTreeMap;
-use std::str;
+use crate::tags::{Tags, TagValue};
 
 pub struct RawMsg {
-    tags: Option<BTreeMap<String, Option<String>>>,
-    source: Option<String>,
-    command: String,
-    params: Vec<String>,
+    pub tags: Option<Tags>,
+    pub source: Option<String>,
+    pub command: String,
+    pub params: Vec<String>,
 }
 
 impl RawMsg {
-    fn from_string(x: String) -> RawMsg {
+    pub fn from_string(x: String) -> RawMsg {
         let mut i = x.trim().chars().fuse().peekable();
 
-        let tags: Option<BTreeMap<String, Option<String>>> = if i.peek() == Some(&'@') {
+        let tags: Option<Tags> = if i.peek() == Some(&'@') {
             let tags_string = i.by_ref().skip(1).take_while(|c| c != &' ').collect::<String>();
 
             Some(
-                tags_string
-                .split(';')
-                .map(|kv| kv.split('=').collect::<Vec<&str>>())
-                .map(|vec| {
-                    if vec.len() == 2 {
-                        (vec[0].to_string(), Some(vec[1].to_string()))
-                    } else {
-                        (vec[0].to_string(), None)
-                    }
-                })
-                .collect()
+                Tags::from_string(tags_string)
             )
         } else {
             None
@@ -61,22 +50,11 @@ impl RawMsg {
         RawMsg{tags: tags, source: source, command: command, params: params}
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let mut s = String::new();
 
-        if !self.tags.is_none() {
-            let tags = self.tags.as_ref().unwrap().iter().map(|kv|
-                if kv.1.is_none() {
-                    format!("{}", kv.0)
-                } else {
-                    format!("{}={}", kv.0, kv.1.as_ref().unwrap())
-                }
-            )
-            .collect::<Vec<String>>();
-
-            if tags.len() > 0 {
-                s.push_str(format!("@{} ", tags.join(";")).as_ref());
-            }
+        if !self.tags.is_none() && !self.tags.is_none() {
+            s.push_str(format!("@{} ", self.tags.as_ref().unwrap().to_string().unwrap()).as_ref());
         }
         
 
@@ -114,24 +92,16 @@ mod tests {
         let source = msg.source.unwrap();
         let command = msg.command;
         let params = msg.params;
-        
-        for (key, value) in &tags {
-            if !value.is_none() {
-                println!("key {} has value {}", key, value.as_ref().unwrap());
-            } else {
-                println!("key {} is set", key);
-            }
-        }
 
+        assert!(match tags.get("rose".to_string()).unwrap() {
+            TagValue::True => true,
+            _ => false
+        });
 
-        for param in &params {
-            println!("param is {}", param);
-        }
-
-        println!("param length is {}", params.len());
-
-        assert_eq!(None, tags.get("rose").unwrap().as_ref());
-        assert_eq!("234AB", tags.get("id").unwrap().as_ref().unwrap());
+        assert!(match tags.get("id".to_string()).unwrap() {
+            TagValue::String(s) => s == "234AB",
+            _ => false
+        });
         assert_eq!("dan!d@localhost", source);
         assert_eq!("PRIVMSG", command);
         assert_eq!(2, params.len());
@@ -146,7 +116,7 @@ mod tests {
         let msg = RawMsg::from_string(sample);
         let source = msg.source.unwrap();
 
-        assert_eq!(None, msg.tags);
+        assert!(msg.tags.is_none());
         assert_eq!("irc.example.com", source);
         assert_eq!("CAP", msg.command);
         assert_eq!("LS", msg.params[0]);
@@ -161,7 +131,7 @@ mod tests {
 
         let msg = RawMsg::from_string(sample);
 
-        assert_eq!(None, msg.tags);
+        assert!(msg.tags.is_none());
         assert_eq!(None, msg.source);
         assert_eq!("CAP", msg.command);
         assert_eq!("LS", msg.params[0]);
@@ -176,7 +146,7 @@ mod tests {
 
         let msg = RawMsg::from_string(sample);
 
-        assert_eq!(None, msg.tags);
+        assert!(msg.tags.is_none());
         assert_eq!("dan!d@localhost", msg.source.unwrap());
         assert_eq!("PRIVMSG", msg.command);
         assert_eq!("#chan", msg.params[0]);
@@ -216,13 +186,8 @@ mod tests {
 
     #[test]
     fn to_string_complete_test() {
-        let tags: BTreeMap<String, Option<String>> = vec![
-            ("id".to_string(), Some("234AB".to_string())),
-            ("rose".to_string(), None),
-        ].into_iter().collect();
-
         let sample = RawMsg{
-            tags: Some(tags), 
+            tags: Some(Tags::from_string("id=234AB;rose".to_string())), 
             source: Some("dan!d@localhost".to_string()), 
             command: "PRIVMSG".to_string(), 
             params: vec![
