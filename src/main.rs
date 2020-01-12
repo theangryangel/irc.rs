@@ -58,6 +58,25 @@ pub async fn main() {
 
                         transport.send(pong).await;
                     },
+                    "PRIVMSG" => {
+                    
+                        if !msg.source.is_none() {
+
+                            let mut params = msg.params.clone();
+                            params[0] = msg.source.unwrap().nick;
+
+                            let echo = wire::RawMsg{
+                                tags: None, 
+                                source: None,
+                                command: "PRIVMSG".to_string(), 
+                                params: params,
+                            };
+
+                            transport.send(echo).await;
+
+                        }
+
+                    },
                     _ => continue
                 }
             }
