@@ -121,8 +121,10 @@ impl Decoder for IrcCodec {
                     let line = &line[..line.len() - 1];
                     let line = without_carriage_return(line);
                     let line = utf8(line)?;
+                    let line = line.to_string();
 
-                    let msg = RawMsg::from_string(line.to_string());
+                    println!("Received {}", line);
+                    let msg = RawMsg::from_string(line);
 
                     //return Ok(Some(line.to_string()));
                     return Ok(Some(msg));

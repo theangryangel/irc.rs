@@ -6,11 +6,21 @@ use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 use tokio::stream::StreamExt;
 use futures::{FutureExt, SinkExt};
+use config::Config;
+use std::collections::HashMap;
 
 #[tokio::main]
 pub async fn main() {
 
-    let stream = TcpStream::connect("chat.freenode.net:6667").await.unwrap();
+    let mut settings = Config::default();
+    settings
+        // Add in `./Settings.toml`
+        .merge(config::File::with_name("Settings")).unwrap()
+        // Add in settings from the environment (with a prefix of APP)
+        // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
+        .merge(config::Environment::with_prefix("APP")).unwrap();
+
+    let stream = TcpStream::connect(settings.get_str("server").unwrap()).await.unwrap();
 
     let mut transport = Framed::new(stream, codec::IrcCodec::new());
 
@@ -18,10 +28,10 @@ pub async fn main() {
     transport.send(cap).await;
 
     let user = wire::RawMsg{source: None, tags: None, command: "USER".to_string(), params: vec![
-        "MrBotMcBotFace".to_string(),
+        settings.get_str("nick").unwrap(),
         "0".to_string(),
         "*".to_string(),
-        "Karl".to_string()
+        settings.get_str("name").unwrap(),
     ]};
 
     transport.send(user).await;
@@ -36,11 +46,7 @@ pub async fn main() {
 
     while let Some(result) = transport.next().await {
         match result {
-            Ok(raw) => {
-                println!("Received {}", raw.to_string());
-
-                let msg = wire::RawMsg::from_string(raw.to_string());
-
+            Ok(msg) => {
                 match msg.command.as_ref() {
                     "PING" => {
                         let pong = wire::RawMsg{

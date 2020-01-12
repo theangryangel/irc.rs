@@ -9,7 +9,7 @@ pub struct RawMsg {
 
 impl RawMsg {
     pub fn from_string(x: String) -> RawMsg {
-        let mut i = x.trim().chars().fuse().peekable();
+        let mut i = x.chars().fuse().peekable();
 
         let tags: Option<Tags> = if i.peek() == Some(&'@') {
             let tags_string = i.by_ref().skip(1).take_while(|c| c != &' ').collect::<String>();
@@ -74,7 +74,6 @@ impl RawMsg {
             s.push_str(&param);
         }
 
-        s.push_str("\r\n");
         s
     }
 }
@@ -85,7 +84,7 @@ mod tests {
 
     #[test]
     fn from_string_complete_test() {
-        let sample = String::from("@id=234AB;rose :dan!d@localhost PRIVMSG #chan :Hey what's up!\r\n");
+        let sample = String::from("@id=234AB;rose :dan!d@localhost PRIVMSG #chan :Hey what's up!");
 
         let msg = RawMsg::from_string(sample);
         let tags = msg.tags.unwrap();
@@ -111,7 +110,7 @@ mod tests {
 
     #[test]
     fn from_string_no_tags_test() {
-        let sample = String::from(":irc.example.com CAP LS * :multi-prefix extended-join sasl\r\n");
+        let sample = String::from(":irc.example.com CAP LS * :multi-prefix extended-join sasl");
 
         let msg = RawMsg::from_string(sample);
         let source = msg.source.unwrap();
@@ -127,7 +126,7 @@ mod tests {
 
     #[test]
     fn from_string_no_tags_no_source_test() {
-        let sample = String::from("CAP LS * :multi-prefix extended-join sasl\r\n");
+        let sample = String::from("CAP LS * :multi-prefix extended-join sasl");
 
         let msg = RawMsg::from_string(sample);
 
@@ -142,7 +141,7 @@ mod tests {
 
     #[test]
     fn from_string_no_tags_no_trailing_test() {
-        let sample = String::from(":dan!d@localhost PRIVMSG #chan Hey!\r\n");
+        let sample = String::from(":dan!d@localhost PRIVMSG #chan Hey!");
 
         let msg = RawMsg::from_string(sample);
 
@@ -166,7 +165,7 @@ mod tests {
             ]
         };
 
-        assert_eq!("PRIVMSG #chan :Hello world!\r\n", sample.to_string());
+        assert_eq!("PRIVMSG #chan :Hello world!", sample.to_string());
     }
 
     #[test]
@@ -181,7 +180,7 @@ mod tests {
             ]
         };
 
-        assert_eq!(":dan!d@localhost PRIVMSG #chan :Hello world!\r\n", sample.to_string());
+        assert_eq!(":dan!d@localhost PRIVMSG #chan :Hello world!", sample.to_string());
     }
 
     #[test]
@@ -196,7 +195,7 @@ mod tests {
             ]
         };
 
-        assert_eq!("@id=234AB;rose :dan!d@localhost PRIVMSG #chan :Hello world!\r\n", sample.to_string());
+        assert_eq!("@id=234AB;rose :dan!d@localhost PRIVMSG #chan :Hello world!", sample.to_string());
     }
 
 }
