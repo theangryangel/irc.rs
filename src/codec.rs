@@ -30,40 +30,12 @@ pub struct IrcCodec {
 }
 
 impl IrcCodec {
-    /// Returns a `IrcCodec` for splitting up data into lines.
-    ///
-    /// # Note
-    ///
-    /// The returned `IrcCodec` will not have an upper bound on the length
-    /// of a buffered line. See the documentation for [`new_with_max_length`]
-    /// for information on why this could be a potential security risk.
-    ///
-    /// [`new_with_max_length`]: #method.new_with_max_length
     pub fn new() -> IrcCodec {
         IrcCodec {
             next_index: 0,
-            max_length: 1024, // the IRC spec says 512, but I've doubled to 1024 for "non compliant" servers. If they exist?
+            max_length: 512, // the IRC spec says 512
             is_discarding: false,
         }
-    }
-
-    /// Returns the maximum line length when decoding.
-    ///
-    /// ```
-    /// use std::usize;
-    /// use tokio_util::codec::IrcCodec;
-    ///
-    /// let codec = IrcCodec::new();
-    /// assert_eq!(codec.max_length(), usize::MAX);
-    /// ```
-    /// ```
-    /// use tokio_util::codec::IrcCodec;
-    ///
-    /// let codec = IrcCodec::new_with_max_length(256);
-    /// assert_eq!(codec.max_length(), 256);
-    /// ```
-    pub fn max_length(&self) -> usize {
-        self.max_length
     }
 }
 

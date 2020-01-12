@@ -1,8 +1,9 @@
 use crate::tags::{Tags, TagValue};
+use crate::prefix::Prefix;
 
 pub struct RawMsg {
     pub tags: Option<Tags>,
-    pub source: Option<String>,
+    pub source: Option<Prefix>,
     pub command: String,
     pub params: Vec<String>,
 }
@@ -21,12 +22,13 @@ impl RawMsg {
             None
         };
 
-        let source: Option<String> = if i.peek() == Some(&':') {
-            Some(
-                i.by_ref()
+        let source: Option<Prefix> = if i.peek() == Some(&':') {
+            let prefix = i.by_ref()
                 .skip(1)
                 .take_while(|c| c != &' ')
-                .collect::<String>()
+                .collect::<String>();
+            Some(
+                Prefix::from_string(prefix)
             )
         } else {
             None
@@ -57,9 +59,8 @@ impl RawMsg {
             s.push_str(format!("@{} ", self.tags.as_ref().unwrap().to_string().unwrap()).as_ref());
         }
         
-
         if !self.source.is_none() {
-            s.push_str(format!(":{} ", self.source.as_ref().unwrap()).as_ref());
+            s.push_str(format!(":{} ", self.source.as_ref().unwrap().to_string()).as_ref());
         }
 
         s.push_str(&self.command);
@@ -101,7 +102,7 @@ mod tests {
             TagValue::String(s) => s == "234AB",
             _ => false
         });
-        assert_eq!("dan!d@localhost", source);
+        assert_eq!("dan!d@localhost", source.to_string());
         assert_eq!("PRIVMSG", command);
         assert_eq!(2, params.len());
         assert_eq!("#chan", params[0]);
@@ -116,7 +117,7 @@ mod tests {
         let source = msg.source.unwrap();
 
         assert!(msg.tags.is_none());
-        assert_eq!("irc.example.com", source);
+        assert_eq!("irc.example.com", source.to_string());
         assert_eq!("CAP", msg.command);
         assert_eq!("LS", msg.params[0]);
         assert_eq!("*", msg.params[1]);
@@ -131,7 +132,7 @@ mod tests {
         let msg = RawMsg::from_string(sample);
 
         assert!(msg.tags.is_none());
-        assert_eq!(None, msg.source);
+        assert!(msg.source.is_none());
         assert_eq!("CAP", msg.command);
         assert_eq!("LS", msg.params[0]);
         assert_eq!("*", msg.params[1]);
@@ -146,7 +147,7 @@ mod tests {
         let msg = RawMsg::from_string(sample);
 
         assert!(msg.tags.is_none());
-        assert_eq!("dan!d@localhost", msg.source.unwrap());
+        assert_eq!("dan!d@localhost", msg.source.unwrap().to_string());
         assert_eq!("PRIVMSG", msg.command);
         assert_eq!("#chan", msg.params[0]);
         assert_eq!("Hey!", msg.params[1]);
@@ -172,7 +173,11 @@ mod tests {
     fn to_string_source_test() {
         let sample = RawMsg{
             tags: None, 
-            source: Some("dan!d@localhost".to_string()), 
+            source: Some(Prefix{
+                nick: "dan".to_string(),
+                user: Some("d".to_string()),
+                host: Some("localhost".to_string())
+            }), 
             command: "PRIVMSG".to_string(), 
             params: vec![
                 "#chan".to_string(), 
@@ -187,7 +192,11 @@ mod tests {
     fn to_string_complete_test() {
         let sample = RawMsg{
             tags: Some(Tags::from_string("id=234AB;rose".to_string())), 
-            source: Some("dan!d@localhost".to_string()), 
+            source: Some(Prefix{
+                nick: "dan".to_string(),
+                user: Some("d".to_string()),
+                host: Some("localhost".to_string())
+            }), 
             command: "PRIVMSG".to_string(), 
             params: vec![
                 "#chan".to_string(), 
