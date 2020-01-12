@@ -9,6 +9,21 @@ pub struct RawMsg {
 }
 
 impl RawMsg {
+    pub fn new(command: String, optional_params: Option<Vec<String>>) -> RawMsg {
+        let params = if optional_params.is_none() {
+            vec![]
+        } else {
+            optional_params.unwrap()
+        };
+
+        RawMsg {
+            tags: None,
+            source: None,
+            command: command,
+            params: params
+        }
+    }
+
     pub fn from_string(x: String) -> RawMsg {
         let mut i = x.chars().fuse().peekable();
 

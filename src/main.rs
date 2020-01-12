@@ -24,23 +24,28 @@ pub async fn main() {
 
     let mut transport = Framed::new(stream, codec::IrcCodec::new());
 
-    let cap = wire::RawMsg{source: None, tags: None, command: "CAP".to_string(), params: vec!["LS".to_string(), "302".to_string()]};
+    let cap = wire::RawMsg::new("CAP".to_string(), Some(vec!["LS".to_string(), "302".to_string()]));
     transport.send(cap).await;
 
-    let user = wire::RawMsg{source: None, tags: None, command: "USER".to_string(), params: vec![
+    let user = wire::RawMsg::new("USER".to_string(), Some(vec![
         settings.get_str("nick").unwrap(),
         "0".to_string(),
         "*".to_string(),
         settings.get_str("name").unwrap(),
-    ]};
+    ]));
 
     transport.send(user).await;
 
-    let nick = wire::RawMsg{source: None, tags: None, command: "NICK".to_string(), params: vec!["MrBotMcBotFace".to_string()]};
+    let nick = wire::RawMsg::new(
+        "NICK".to_string(),
+        Some(vec![
+            settings.get_str("nick").unwrap()
+        ])
+    );
     transport.send(nick).await;
 
     // TODO this should wait until after we get the CAP resp
-    let cap_end = wire::RawMsg{source: None, tags: None, command: "CAP".to_string(), params: vec!["END".to_string()]};
+    let cap_end = wire::RawMsg::new("CAP".to_string(), Some(vec!["END".to_string()]));
 
     transport.send(cap_end).await;
 
@@ -49,12 +54,9 @@ pub async fn main() {
             Ok(msg) => {
                 match msg.command.as_ref() {
                     "PING" => {
-                        let pong = wire::RawMsg{
-                            source: None, 
-                            tags: None, 
-                            command: "PONG".to_string(), 
-                            params: vec![]
-                        };
+                        let pong = wire::RawMsg::new(
+                            "PONG".to_string(), None
+                        );
 
                         transport.send(pong).await;
                     },
@@ -65,12 +67,10 @@ pub async fn main() {
                             let mut params = msg.params.clone();
                             params[0] = msg.source.unwrap().nick;
 
-                            let echo = wire::RawMsg{
-                                tags: None, 
-                                source: None,
-                                command: "PRIVMSG".to_string(), 
-                                params: params,
-                            };
+                            let echo = wire::RawMsg::new(
+                                "PRIVMSG".to_string(), 
+                                Some(params),
+                            );
 
                             transport.send(echo).await;
 
