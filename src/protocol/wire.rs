@@ -1,5 +1,5 @@
-use crate::tags::{Tags, TagValue};
-use crate::prefix::Prefix;
+use crate::protocol::tags::{Tags, TagValue};
+use crate::protocol::prefix::Prefix;
 
 pub struct RawMsg {
     pub tags: Option<Tags>,

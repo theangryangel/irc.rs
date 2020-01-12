@@ -4,7 +4,7 @@ use tokio_util::codec::Decoder;
 use bytes::{Buf, BufMut, BytesMut};
 use std::{cmp, fmt, io, str, usize};
 
-use crate::wire::RawMsg;
+use crate::protocol::wire::RawMsg;
 
 /// A simple `Codec` implementation that splits up data into lines, and
 /// the parses the result into RawMsg's

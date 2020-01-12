@@ -1,7 +1,6 @@
-mod wire;
-mod tags;
-mod codec;
-mod prefix;
+mod protocol;
+
+use protocol::wire;
 
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
@@ -22,7 +21,7 @@ pub async fn main() {
 
     let stream = TcpStream::connect(settings.get_str("server").unwrap()).await.unwrap();
 
-    let mut transport = Framed::new(stream, codec::IrcCodec::new());
+    let mut transport = Framed::new(stream, protocol::codec::IrcCodec::new());
 
     let cap = wire::RawMsg::new("CAP".to_string(), Some(vec!["LS".to_string(), "302".to_string()]));
     transport.send(cap).await;
